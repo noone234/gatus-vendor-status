@@ -1,0 +1,68 @@
+# ---------------------------------------------------------------------------
+# Gatus config: aggregating third-party vendor status pages.
+#
+# Most SaaS vendors run Atlassian Statuspage, which exposes a machine-readable
+# summary at <status-host>/api/v2/status.json shaped like:
+#
+#   { "status": { "indicator": "none", "description": "All Systems Operational" } }
+#
+# Valid indicator values: none | minor | major | critical
+# (Some pages also report "maintenance".)
+#
+# So a vendor check is really two questions: did the status page respond,
+# and does it claim the vendor is healthy.
+# ---------------------------------------------------------------------------
+
+storage:
+  type: sqlite
+  path: /data/data.db
+
+metrics: true
+
+ui:
+  title: Vendor Status
+  header: Vendor Status
+
+alerting:
+  slack:
+    webhook-url: ${SLACK_WEBHOOK_URL}
+    default-alert:
+      # Two consecutive bad polls before alerting, so one flaky fetch is quiet.
+      failure-threshold: 2
+      success-threshold: 2
+      send-on-resolved: true
+
+endpoints:
+  # The first endpoint defines YAML anchors (&statuspage-conditions and
+  # &statuspage-alerts). Every later Statuspage-backed vendor just references
+  # them with *, so adding a service is four lines.
+
+  - name: github
+    group: dev
+    url: "https://www.githubstatus.com/api/v2/status.json"
+    interval: 5m
+    conditions: &statuspage-conditions
+      - "[STATUS] == 200"
+      # Real outages only. Swap in '[BODY].status.indicator == none' if you
+      # also want minor degradations and maintenance windows.
+      - "[BODY].status.indicator != major"
+      - "[BODY].status.indicator != critical"
+    alerts: &statuspage-alerts
+      - type: slack
+
+  - name: cloudflare
+    group: infra
+    url: "https://www.cloudflarestatus.com/api/v2/status.json"
+    interval: 5m
+    conditions: *statuspage-conditions
+    alerts: *statuspage-alerts
+
+  # AWS does not run Atlassian Statuspage, so it needs its own handling.
+  # This only confirms the health dashboard is reachable; it does not parse
+  # regional health. Placeholder until you decide what's worth watching.
+  - name: aws-health-dashboard
+    group: infra
+    url: "https://health.aws.amazon.com/health/status"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"

@@ -1,0 +1,5 @@
+# Secrets
+.env
+
+# SQLite database and history
+data/

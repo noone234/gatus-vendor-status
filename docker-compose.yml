@@ -1,0 +1,20 @@
+services:
+  gatus:
+    # The image is built FROM scratch: no shell, no wget, no package manager.
+    # That means `docker exec` and container HEALTHCHECKs will not work here.
+    # Pin a specific tag once you've checked https://github.com/TwiN/gatus/releases
+    image: twinproduction/gatus:latest
+    container_name: gatus
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount the FOLDER, not the file. Gatus watches the config directory and
+      # hot-reloads on change; a direct file bind mount breaks that (TwiN/gatus#151).
+      - ./config:/config
+      - ./data:/data
+    environment:
+      TZ: America/New_York
+      GATUS_LOG_LEVEL: INFO
+      # Referenced in config/config.yaml as ${SLACK_WEBHOOK_URL}. Set it in .env.
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
