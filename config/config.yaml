@@ -34,7 +34,7 @@ alerting:
 
 endpoints:
   # The first endpoint defines YAML anchors (&statuspage-conditions and
-  # &statuspage-alerts). Every later Statuspage-backed vendor just references
+  # &vendor-alerts). Every later Statuspage-backed vendor just references
   # them with *, so adding a service is four lines.
 
   - name: github
@@ -47,7 +47,7 @@ endpoints:
       # also want minor degradations and maintenance windows.
       - "[BODY].status.indicator != major"
       - "[BODY].status.indicator != critical"
-    alerts: &statuspage-alerts
+    alerts: &vendor-alerts
       - type: slack
 
   - name: cloudflare
@@ -55,7 +55,7 @@ endpoints:
     url: "https://www.cloudflarestatus.com/api/v2/status.json"
     interval: 5m
     conditions: *statuspage-conditions
-    alerts: *statuspage-alerts
+    alerts: *vendor-alerts
 
   # AWS does not run Atlassian Statuspage, so it needs its own handling.
   # This only confirms the health dashboard is reachable; it does not parse

@@ -45,7 +45,7 @@ curl -s https://status.stripe.com/api/v2/status.json | jq .status
     url: "https://status.stripe.com/api/v2/status.json"
     interval: 5m
     conditions: *statuspage-conditions
-    alerts: *statuspage-alerts
+    alerts: *vendor-alerts
 ```
 
 If `curl` returns 404, the vendor is not on Atlassian Statuspage. Check for an
